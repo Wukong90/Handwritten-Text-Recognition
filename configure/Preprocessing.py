@@ -1,0 +1,171 @@
+import numpy as np
+from skimage.transform import resize
+from skimage import transform
+from skimage import exposure
+import random
+
+import torch
+from torch.nn.utils.rnn import pack_padded_sequence as pack, pad_packed_sequence as unpack
+
+# ------------------------------------------------
+
+
+rota = [-0.5,-0.3,-0.1,0.1,0.3,0.5]
+she  = [-0.5,-0.3,-0.1,0.1,0.3,0.5]
+
+
+def ept_collate_fn(batch):   #form a batch 
+    images, targets, target_lengths = zip(*batch)
+    images = torch.stack(images, 0)
+    targets = torch.cat(targets, 0)
+    target_lengths = torch.cat(target_lengths, 0)
+    return images, targets, target_lengths
+
+
+def pad_packed_collate(batch):
+
+    if len(batch) == 1:
+        sigs, labels, ids = batch[0][0], batch[0][1], batch[0][2]
+        # sigs = sigs.t()
+        lengths = [sigs.size(0)]
+        sigs.unsqueeze_(0)
+        labels = [labels]
+        ids = [ids]
+    if len(batch) > 1:
+        sigs, labels, lengths, ids = zip(
+            *[(a, b, a.size(2), c) for (a, b, c) in sorted(batch, key=lambda x: x[0].size(2), reverse=True)])
+
+        n_channel, n_feats, max_len = sigs[0].size()
+        sigs = [torch.cat((s, torch.zeros(n_channel, n_feats, max_len - s.size(2))), 2) if s.size(2) != max_len else s for s in
+                sigs]
+        sigs = torch.stack(sigs, 0)
+    packed_batch = pack(sigs, lengths, batch_first=True)
+    return packed_batch, labels, ids
+
+# ------------------------------------------------
+
+
+
+def img_resize(img, height=None, width=None, keep_ratio=True, data_shuffle=False):
+
+    #img rotation and shear
+
+    if(data_shuffle):
+        indi_trans = random.random()
+
+        if indi_trans >= 0.5:
+            indi_trans_rot = random.random()
+            if(indi_trans_rot >=0.5):
+                index = random.randint(0,5)
+                img = transform.rotate(img,rota[index])
+            indi_trans_she = random.random()
+            if(indi_trans_she >= 0.5):
+                index = random.randint(0,5)
+                sh = transform.AffineTransform(shear=she[index])
+                img = transform.warp(img,sh)
+
+    
+    # keep height-width ratio
+    if (float(img.shape[0]) > height) or (float(img.shape[1]) > width):
+        if height is not None and width is not None:
+            scale_h = float(height) / float(img.shape[0])
+            scale_w = float(width) / float(img.shape[1])
+            if scale_h * float(img.shape[1]) <= width:  # padding in width
+                w = int(scale_h * float(img.shape[1]))
+                img = resize(image=img, output_shape=(height, w)).astype(np.float32)
+                pad =  float(width - w)
+                left_pad = int(pad / 2.0)
+                right_pad = int(pad - left_pad)
+
+                img = np.pad(img, ((0, 0), (left_pad, right_pad)), 'constant', constant_values=1)
+
+
+            else:  # padding in height
+                h = int(scale_w * img.shape[0])
+                img = resize(image=img, output_shape=(h, width)).astype(np.float32)
+                pad =  float(height - h)
+                up_pad = int(pad / 2.0)
+                down_pad = int(pad - up_pad)
+
+
+                img = np.pad(img, ((up_pad, down_pad), (0, 0)), 'constant', constant_values=1)
+    else:
+
+        pad_height = float(height - img.shape[0])
+        upper_pad = int(pad_height / 2.0)
+        down_pad = int(pad_height - upper_pad)
+
+        pad_width = float(width - img.shape[1])
+        left_pad = int(pad_width / 2.0)
+        right_pad = int(pad_width - left_pad)
+
+        img = np.pad(img, ((upper_pad, down_pad), (left_pad, right_pad)), 'constant', constant_values=1)
+
+    return img
+
+
+def img_affine(img):
+    return img
+
+
+def img_centered(img):
+    img_r = img_resize(img, height=img.shape[0]-6, width=img.shape[1]-20)
+    img_c = np.pad(img_r, ((0, 0), (10, 10)), 'constant', constant_values=0)
+    img_c = np.pad(img_c, ((3, 3), (0, 0)), 'constant', constant_values=0)
+    assert img_c.shape[0] == img.shape[0]
+    assert img_c.shape[1] == img.shape[1]
+    return img_c
+
+
+def img_shear(img, ang):
+    tform = transform.AffineTransform(shear=ang)
+    tf_img = transform.warp(img, tform, order=1, preserve_range=True, mode='constant')
+    return tf_img
+
+
+def img_deslant(img):
+    alphaVals = np.arange(-0.5, 0.5, 0.1)
+
+    best_alpha = -0.5
+    max_sum_alpha = 0
+
+    for alpha in alphaVals:
+        # print("alpha =", alpha)
+        sum_alpha = 0
+        sheared_image: np.ndarray = img_shear(img, alpha)
+        fg = sheared_image  # == 0
+        fg = (fg > 0.4).astype(np.float32)
+        # print("fg =", fg)
+        # print("fg.sum() =", fg.sum())
+        h_alpha = fg.sum(axis=0)  # stroke pixel number in one col
+        # print("h_alpha =", h_alpha)
+        for col in range(fg.shape[1]):
+            indexes = np.nonzero(fg[:, col])[0]
+            if len(indexes) != 0:
+                d_y_alpha = np.max(indexes) - np.min(indexes)
+                if d_y_alpha == h_alpha[col]:  # one continue stroke in this line
+                    # print("d_y_alpha =", d_y_alpha)
+                    # print("h_alpha[col] =", h_alpha[col])
+                    sum_alpha += h_alpha[col] ** 2
+        if sum_alpha > max_sum_alpha:
+            # print("sum_alpha =", sum_alpha, " aplha =", alpha)
+            max_sum_alpha = sum_alpha
+            best_alpha = alpha  # with more like one continue stroke in line, more likely a deslant image
+    # print("best_alpha =", best_alpha)
+    result = img_shear(img, best_alpha)
+    return result
+
+
+def preprocessing(img, data_size=(32, None), affine=False, centered=False, deslant=False, keep_ratio=True,
+                  enhance_contrast=False,data_shuffle=False):   #shuffle or not
+    if centered:
+        img = img_centered(img)
+    if deslant:
+        img = img_deslant(img)
+    if affine:
+        img = img_affine(img)
+    if enhance_contrast:
+        img = exposure.rescale_intensity(img)
+    img = img_resize(img, height=data_size[0], width=data_size[1], keep_ratio=keep_ratio, data_shuffle=data_shuffle)
+
+    return img
