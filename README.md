@@ -7,19 +7,11 @@ This code is part of the implementation of the handwritten text recognition expe
 If you use our code in your research or wish to refer to the baseline results, please use the following BibTeX entry.
 
 @article{wang2022fast,
-
   title={Fast writer adaptation with style extractor network for handwritten text recognition},
-  
   author={Wang, Zi-Rui and Du, Jun},
-  
   journal={Neural Networks},
-  
   volume={147},
-  
   pages={42--52},
-  
-  year={2022},
-  
-  publisher={Elsevier}
-  
+  year={2022}, 
+  publisher={Elsevier} 
 }
