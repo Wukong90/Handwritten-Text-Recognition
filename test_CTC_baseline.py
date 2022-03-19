@@ -93,19 +93,19 @@ TEST_LOADER = DataLoader(
 
 num_class = len(alphabet)
 
-CRNN = CRNNOri(1, num_class,
+HVCNN = HAMVisContexNN(1, num_class,
                 map_to_seq_hidden=64,
                 rnn_hidden=256)   
 
-CRNN.load_state_dict(torch.load(model_name))
-CRNN.cuda()
+HVCNN.load_state_dict(torch.load(model_name))
+HVCNN.cuda()
 
 CRITERION = CTCLoss()
 CRITERION.cuda()
 
 LEN_TEST_SET = test_set.__len__()
 
-test(CRNN, CRITERION, TEST_LOADER, LEN_TEST_SET)
+test(HVCNN, CRITERION, TEST_LOADER, LEN_TEST_SET)
 
 
 
