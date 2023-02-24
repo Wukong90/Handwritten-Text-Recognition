@@ -4,8 +4,9 @@ This code is part of the implementation of the handwritten text recognition expe
 
 For the HETR task:
 
-Only need the backbone recognition network in Fig.4 -> Run the train_CTC_HAM_Vis_Contex.py;
-Train the writer style extractor network in Fig.5 ->  Run the train_WID.py;
+IF you only need the backbone recognition network in Fig.4, just run the train_CTC_HAM_Vis_Contex.py;
+
+Train the writer style extractor network in Fig.5, run the train_WID.py;
 
 # Citation
 
