@@ -42,7 +42,7 @@ def gather_iam_line(set='train',set_wid=False):
     root_path = line_img
     if set == 'train' and set_wid == True:
         data_set = np.loadtxt(line_train_wid, dtype=str)
-    if set == 'train' and set_wid == False:
+    elif set == 'train' and set_wid == False:
         data_set = np.loadtxt(line_train_rec, dtype=str)
 
     elif set == 'test':
