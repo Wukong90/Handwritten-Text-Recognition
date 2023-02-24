@@ -1,1 +1,1 @@
-from .model import HAMVisContexNN
+from .model import HAMVisContexNN,WIDNN
