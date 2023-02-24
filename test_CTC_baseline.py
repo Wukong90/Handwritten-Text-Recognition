@@ -81,7 +81,7 @@ def test(model, criterion, test_loader, len_test_set):
 
 
 test_set = myDataset(data_type='IAM', data_size=(124, 1751),
-                set='test', centered=False, deslant=False,  keep_ratio=False,
+                set='test', set_wid=False, centered=False, deslant=False,  keep_ratio=False,
                 enhance_contrast=False)
 
 TEST_LOADER = DataLoader(
