@@ -2,6 +2,11 @@
 
 This code is part of the implementation of the handwritten text recognition experiments in the paper [Fast writer adaptation with style extractor network for handwritten text recognition](https://sciencedirect.53yu.com/science/article/abs/pii/S0893608021004755). The code is developed based on the Pytorch framework.
 
+For the HETR task:
+
+Only need the backbone recognition network in Fig.4 -> Run the train_CTC_HAM_Vis_Contex.py;
+Train the writer style extractor network in Fig.5 ->  Run the train_WID.py;
+
 # Citation
 
 If you use our code in your research or wish to refer to the baseline results, please use the following BibTeX entry.
