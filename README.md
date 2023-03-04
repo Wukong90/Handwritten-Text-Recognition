@@ -7,11 +7,15 @@ This code is part of the implementation of the handwritten text recognition expe
 For the HETR task:
 
 (1)If you only need the backbone recognition network: 
+
 ![](https://github.com/Wukong90/Handwritten-Text-Recognition/blob/main/imgs/baselines.jpg)
+
 ，just run the train_CTC_HAM_Vis_Contex.py;
 
-(2)Train the writer style extractor network ：
+(2)Train the writer style extractor network：
+
 ![](https://github.com/Wukong90/Handwritten-Text-Recognition/blob/main/imgs/SEN.jpg)
+
 , run the train_WID.py;
 
 # Citation
