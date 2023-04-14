@@ -118,10 +118,15 @@ class HAMVisContexNN(nn.Module):
         # fully connected
         self.dense = nn.Linear(1024, num_class)
 
-    def forward(self, x):  
+    def forward(self, x, y1, y2, y3, ADA):  
 
         # CNN block
         out = self.b0_c1(x)
+        if(ADA==True):
+            out = out.view(out.size(0),out.size(1),out.size(3),out.size(2))
+            out = torch.add(out,y1) #added win
+            out = out.view(out.size(0),out.size(1),out.size(3),out.size(2))
+	
         out = self.b0_b1(out)
         out = nn.ReLU(inplace=True)(out)
         out = SimAM(out)  
@@ -131,10 +136,20 @@ class HAMVisContexNN(nn.Module):
         identi1 = out
 
         out = self.b1_c1(out)
+        if(ADA==True):
+            out = out.view(out.size(0),out.size(1),out.size(3),out.size(2))
+            out = torch.add(out,y2) #added win
+            out = out.view(out.size(0),out.size(1),out.size(3),out.size(2))
+	
         out = self.b1_b1(out)
         out = nn.ReLU(inplace=True)(out)
         out = SimAM(out)   
         out = self.b1_c2(out)
+        if(ADA==True):
+            out = out.view(out.size(0),out.size(1),out.size(3),out.size(2))
+            out = torch.add(out,y3) #added win
+            out = out.view(out.size(0),out.size(1),out.size(3),out.size(2))
+	
         out = self.b1_b2(out)
 
         out = nn.ReLU(inplace=True)(identi1 + out)
@@ -253,7 +268,7 @@ class WIDNN(nn.Module):
         # fully connected
         self.dense = nn.Linear(2*rnn_hidden, num_class)
 
-    def forward(self, x):
+    def forward(self, x, ADA):
         # CNN block
         x = self.cnn(x)
 
@@ -268,10 +283,12 @@ class WIDNN(nn.Module):
         _,_,feature_num = x.size()
         x = nn.functional.adaptive_avg_pool2d(x,(1,feature_num))
         x = x.view(batch,feature_num)
-        x = self.dense(x)
-        return x
-
-
+        if(ADA==True):
+            global_win = x
+            return global_win
+        else:
+            x = self.dense(x)
+            return x
 
 class Bridge(nn.Module):
     def __init__(self,hidden_dim=256):
