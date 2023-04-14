@@ -13,7 +13,7 @@ from model import HAMVisContexNN
 #from evaluate import evaluate
 
 out_f = open('./train_loss/train_CTC_HAM_Vis_Contex.txt','w')
-save_model_dir = './weights/'
+save_model_dir = './weights/HVC_weights/'
 model_name = 'CTC_HAM_Vis_Contex_epoch'
 alphabet = """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
 cdict = {c: i for i, c in enumerate(alphabet)}  # character -> int
