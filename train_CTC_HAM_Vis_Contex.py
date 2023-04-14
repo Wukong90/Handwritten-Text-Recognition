@@ -33,7 +33,7 @@ def train_batch(model, data, optimizer, criterion, device):
     images = images.cuda()
 
 
-    logits = model(images,null,null,null,False)
+    logits = model(images,"","","",False)
     
     log_probs = torch.nn.functional.log_softmax(logits, dim=2)
 
@@ -76,7 +76,7 @@ def val(model, criterion, val_loader, len_val_set):
         images = Variable(img.data.unsqueeze(1))
         images = images.cuda()
 
-        preds = model(images,null,null,null,False)
+        preds = model(images,"","","",False)
         preds_size = Variable(torch.LongTensor([preds.size(0)] * images.size(0)))
 
         # Process labels for CTCLoss
