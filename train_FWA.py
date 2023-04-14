@@ -177,7 +177,7 @@ def main():
                 map_to_seq_hidden=32,
                 rnn_hidden=128)
 
-    bri = Bridge1(hidden_dim=256)
+    bri = Bridge(hidden_dim=256)
  
     recog_net.load_state_dict(torch.load(pre_trained_rec))
     id_net.load_state_dict(torch.load(pre_trained_wid))
