@@ -14,7 +14,7 @@ from model import HAMVisContexNN_ADA,WIDNN_ADA,Bridge
 #from evaluate import evaluate
 
 out_f = open('./train_loss/train_adaptation.txt','w')
-save_model_dir = './weights/ada/'
+save_model_dir = './weights/ADA_weights/'
 model_name1 = 'ada_rec_epoch'
 model_name2 = 'ada_sen_epoch'
 model_name3 = 'ada_bri_epoch'
