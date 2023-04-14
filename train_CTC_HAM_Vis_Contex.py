@@ -21,8 +21,8 @@ icdict = {i: c for i, c in enumerate(alphabet)}  # int -> character
 
 
 
-def train_batch(crnn, data, optimizer, criterion, device):
-    crnn.train()
+def train_batch(model, data, optimizer, criterion, device):
+    model.train()
     
 
 
@@ -33,7 +33,7 @@ def train_batch(crnn, data, optimizer, criterion, device):
     images = images.cuda()
 
 
-    logits = crnn(images)
+    logits = model(images,null,null,null,False)
     
     log_probs = torch.nn.functional.log_softmax(logits, dim=2)
 
@@ -76,7 +76,7 @@ def val(model, criterion, val_loader, len_val_set):
         images = Variable(img.data.unsqueeze(1))
         images = images.cuda()
 
-        preds = model(images)
+        preds = model(images,null,null,null,False)
         preds_size = Variable(torch.LongTensor([preds.size(0)] * images.size(0)))
 
         # Process labels for CTCLoss
