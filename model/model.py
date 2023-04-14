@@ -270,3 +270,46 @@ class WIDNN(nn.Module):
         x = x.view(batch,feature_num)
         x = self.dense(x)
         return x
+
+
+
+class Bridge(nn.Module):
+    def __init__(self,hidden_dim=256):
+        super(Bridge, self).__init__()
+
+        self.relu = nn.ReLU(inplace=True)
+        self.global_dense1 = nn.Linear(256,hidden_dim)
+        self.global_dense2 = nn.Linear(hidden_dim,128)
+
+        ####
+
+        self.ada_trans0 = nn.Linear(128, 32)
+
+        self.ada_trans11 = nn.Linear(128, 32)
+        self.ada_trans12 = nn.Linear(128, 32)
+
+
+
+    def forward(self, x_g): 
+
+        #global
+        x_g = self.global_dense1(x_g)
+        x_g = self.relu(x_g)
+        x_g = self.global_dense2(x_g)
+        x_g = self.relu(x_g)
+
+        out1 = self.ada_trans0(x_g)
+        out2 = self.ada_trans11(x_g)
+        out3 = self.ada_trans12(x_g)
+
+
+        out1 = out1.view(out1.size(0),out1.size(1),1,1)
+        out2 = out2.view(out2.size(0),out2.size(1),1,1)
+        out3 = out3.view(out3.size(0),out3.size(1),1,1)
+
+        return out1,out2,out3
+
+
+
+
+
