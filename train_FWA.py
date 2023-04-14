@@ -10,7 +10,7 @@ from configure import myDataset
 from utils import CER, WER
 
 
-from model import CRNN,CRNNOri,CRNNOriThreernn,WIDNN,Bridge1
+from model import HAMVisContexNN_ADA,WIDNN_ADA,Bridge
 #from evaluate import evaluate
 
 out_f = open('./train_loss/train_adaptation.txt','w')
@@ -18,8 +18,8 @@ save_model_dir = './weights/ada/'
 model_name1 = 'ada_rec_epoch'
 model_name2 = 'ada_sen_epoch'
 model_name3 = 'ada_bri_epoch'
-pre_trained_rec = './weights/res_hybrid_vis/resize_1751_124_rms_nnpara_lr0.0005_batchsize64_trans_Res_hybrid_vis_epoch374'
-pre_trained_wid = './weights/WIDs/wids_epoch379'
+pre_trained_rec = './weights/'
+pre_trained_wid = './weights/'
 alphabet = """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
 cdict = {c: i for i, c in enumerate(alphabet)}  # character -> int
 icdict = {i: c for i, c in enumerate(alphabet)}  # int -> character
@@ -169,11 +169,11 @@ def main():
 
     num_class = len(alphabet)
     
-    recog_net = CRNNOri(1, num_class,
+    recog_net = HAMVisContexNN_ADA(1, num_class,
                 map_to_seq_hidden=64,
                 rnn_hidden=256)  
 
-    id_net = WIDNN(1, 283,
+    id_net = WIDNN_ADA(1, 283,
                 map_to_seq_hidden=32,
                 rnn_hidden=128)
 
