@@ -18,6 +18,12 @@ For the HETR task:
 
 , run the train_WID.py;
 
+(3)Now, you can train the adaptation network, run the train_FWA.py;
+
+The whole pipeline is shown in Alg. 1 and Alg. 2.
+![](https://github.com/Wukong90/Handwritten-Text-Recognition/blob/main/imgs/procedure.png)
+
+
 # Citation
 
 If you use our code in your research or wish to refer to the baseline results, please use the following BibTeX entry.
