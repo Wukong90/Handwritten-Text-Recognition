@@ -10,7 +10,7 @@ from configure import myDataset
 from utils import CER, WER
 
 
-from model import HAMVisContexNN_ADA,WIDNN_ADA,Bridge
+from model import HAMVisContexNN,WIDNN,Bridge
 #from evaluate import evaluate
 
 out_f = open('./train_loss/train_adaptation.txt','w')
@@ -36,10 +36,10 @@ def train_batch(recognet, idnet, brinet, data, optimizer, criterion, device):
     images = Variable(img.data.unsqueeze(1))
     images = images.cuda()
 
-    global_wid = idnet(images)
+    global_wid = idnet(images,True)
     win1,win2,win3 = brinet(global_wid)
 
-    logits = recognet(images, win1,win2,win3)
+    logits = recognet(images, win1,win2,win3,True)
     
     log_probs = torch.nn.functional.log_softmax(logits, dim=2)
 
@@ -84,10 +84,10 @@ def val(recognet,idnet,brinet, criterion, val_loader, len_val_set):
         images = Variable(img.data.unsqueeze(1))
         images = images.cuda()
 
-        global_wid = idnet(images)
+        global_wid = idnet(images,True)
         win1,win2,win3 = brinet(global_wid)
 
-        preds = recognet(images, win1,win2,win3)
+        preds = recognet(images, win1,win2,win3,True)
 
         preds_size = Variable(torch.LongTensor([preds.size(0)] * images.size(0)))
 
@@ -169,11 +169,11 @@ def main():
 
     num_class = len(alphabet)
     
-    recog_net = HAMVisContexNN_ADA(1, num_class,
+    recog_net = HAMVisContexNN(1, num_class,
                 map_to_seq_hidden=64,
                 rnn_hidden=256)  
 
-    id_net = WIDNN_ADA(1, 283,
+    id_net = WIDNN(1, 283,
                 map_to_seq_hidden=32,
                 rnn_hidden=128)
 
