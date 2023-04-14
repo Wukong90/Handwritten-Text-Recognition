@@ -43,7 +43,7 @@ def test(model1, model2, model3, criterion, test_loader, len_test_set):
        
         with torch.no_grad():
             if(ADA==False)：
-                preds = model1(img,False)
+                preds = model1(img,"","","",False)
             else:
                 global_wid = model2(img,True)
                 win1,win2,win3 = model3(global_wid)
@@ -134,6 +134,6 @@ CRITERION.cuda()
 LEN_TEST_SET = test_set.__len__()
 
 if(ADA==Flase):
-    test(HVCNN, null, null, CRITERION, TEST_LOADER, LEN_TEST_SET)
+    test(HVCNN, "", "", CRITERION, TEST_LOADER, LEN_TEST_SET)
 else:
     test(HVCNN, id_net, bri, CRITERION, TEST_LOADER, LEN_TEST_SET)
