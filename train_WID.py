@@ -31,8 +31,8 @@ while True:
 
 
 
-def train_batch(crnn, data, optimizer, criterion):
-    crnn.train()
+def train_batch(model, data, optimizer, criterion):
+    model.train()
 
     img = data[0]
     labels = data[2]
@@ -43,7 +43,7 @@ def train_batch(crnn, data, optimizer, criterion):
     target = Variable(torch.from_numpy(np.array(labels)))
 
 
-    logits = crnn(images)
+    logits = model(images,False)
     log_probs = torch.nn.functional.log_softmax(logits, dim=1)
 
     target = target.cuda()
@@ -70,7 +70,7 @@ def val(model, criterion, val_loader, len_val_set):
 
         target = Variable(torch.from_numpy(np.array(labels)))
 
-        preds = model(images)
+        preds = model(images,False)
 
         preds = preds.argmax(dim=1)
         preds = preds.cpu()
