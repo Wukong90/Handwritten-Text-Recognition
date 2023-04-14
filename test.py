@@ -9,19 +9,30 @@ from configure import Preprocessing
 from configure import myDataset
 from utils import CER, WER
 
-from model import HAMVisContexNN
+from model import HAMVisContexNN, WIDNN, Bridge
 from tqdm import tqdm
 
-
-model_name = './weights/CTC_HAM_Vis_Contex_epoch_epoch'
+ADA=False #Adaptation or not
+if (ADA==False):
+    model_name = './weights/HVC_weights/'
+ else:
+    model_name1 = './weights/ADA_weights/'
+    model_name2 = './weights/ADA_weights/'
+    model_name3 = './weights/ADA_weights/'
+    
 alphabet = """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
 cdict = {c: i for i, c in enumerate(alphabet)}  
 icdict = {i: c for i, c in enumerate(alphabet)}  
 
-def test(model, criterion, test_loader, len_test_set):
+def test(model1, model2, model3, criterion, test_loader, len_test_set):
     print("Testing...")
-    model.eval()
-
+    if(ADA==False):
+        model1.eval()
+    else:
+        model1.eval()
+        model2.eval()
+        model3.eval()
+        
     avg_cost = 0
     avg_CER = 0
     avg_WER = 0
@@ -31,9 +42,14 @@ def test(model, criterion, test_loader, len_test_set):
         img = img.cuda()
        
         with torch.no_grad():
-            preds = model(img)
+            if(ADA==False)：
+                preds = model1(img,False)
+            else:
+                global_wid = model2(img,True)
+                win1,win2,win3 = model3(global_wid)
+                preds = model1(img, win1,win2,win3,True)
+                
         preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
-
         
         labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
         label_lengths = torch.LongTensor([len(t) for t in transcr])
@@ -96,16 +112,28 @@ num_class = len(alphabet)
 HVCNN = HAMVisContexNN(1, num_class,
                 map_to_seq_hidden=64,
                 rnn_hidden=256)   
+if(ADA==True):
+    id_net = WIDNN(1, 283,
+                map_to_seq_hidden=32,
+                rnn_hidden=128)
+    bri = Bridge()
+    HVCNN.load_state_dict(torch.load(model_name1))
+    id_net.load_state_dict(torch.load(model_name2))
+    bri.load_state_dict(torch.load(model_name3))
+    HVCNN.cuda()
+    id_net.cuda()
+    bri.cuda()
 
-HVCNN.load_state_dict(torch.load(model_name))
-HVCNN.cuda()
+else:
+    HVCNN.load_state_dict(torch.load(model_name))
+    HVCNN.cuda()
 
 CRITERION = CTCLoss()
 CRITERION.cuda()
 
 LEN_TEST_SET = test_set.__len__()
 
-test(HVCNN, CRITERION, TEST_LOADER, LEN_TEST_SET)
-
-
-
+if(ADA==Flase):
+    test(HVCNN, null, null, CRITERION, TEST_LOADER, LEN_TEST_SET)
+else:
+    test(HVCNN, id_net, bri, CRITERION, TEST_LOADER, LEN_TEST_SET)
