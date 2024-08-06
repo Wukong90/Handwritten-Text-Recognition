@@ -15,7 +15,7 @@ from tqdm import tqdm
 ADA=False #Adaptation or not
 if (ADA==False):
     model_name = './weights/HVC_weights/'
- else:
+else:
     model_name1 = './weights/ADA_weights/'
     model_name2 = './weights/ADA_weights/'
     model_name3 = './weights/ADA_weights/'
@@ -133,7 +133,7 @@ CRITERION.cuda()
 
 LEN_TEST_SET = test_set.__len__()
 
-if(ADA==Flase):
+if(ADA==False):
     test(HVCNN, "", "", CRITERION, TEST_LOADER, LEN_TEST_SET)
 else:
     test(HVCNN, id_net, bri, CRITERION, TEST_LOADER, LEN_TEST_SET)
