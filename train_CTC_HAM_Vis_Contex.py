@@ -120,11 +120,11 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     train_set = myDataset(data_type='IAM', data_size=(124, 1751),
-                          set='train', set_wid=False, centered=False, deslant=False, data_aug=True,
+                          set='train', set_wid=False, centered=False, deslant=False, data_aug=True, data_shuffle=True,
                           keep_ratio=True, enhance_contrast=False)
 
     val1_set = myDataset(data_type='IAM', data_size=(124, 1751),
-                         set='val', set_wid=False, centered=False, deslant=False, keep_ratio=True,
+                         set='val', set_wid=False, centered=False, deslant=False, data_shuffle=False, keep_ratio=True,
                          enhance_contrast=False)
 
 
