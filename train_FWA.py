@@ -24,7 +24,6 @@ alphabet = """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkl
 cdict = {c: i for i, c in enumerate(alphabet)}  # character -> int
 icdict = {i: c for i, c in enumerate(alphabet)}  # int -> character
 
-
 def train_batch(recognet, idnet, brinet, data, optimizer, criterion, device):
     recognet.train()
     idnet.train()
@@ -52,13 +51,8 @@ def train_batch(recognet, idnet, brinet, data, optimizer, criterion, device):
     labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(targets)]))
     labels = labels.cuda()
 
-
-
     label_lengths = torch.LongTensor([len(t) for t in targets])
     label_lengths = label_lengths.cuda()
-
-
-
 
     loss = criterion(log_probs, labels, input_lengths, label_lengths)
 
@@ -68,13 +62,15 @@ def train_batch(recognet, idnet, brinet, data, optimizer, criterion, device):
     return loss.item()
 
 
-def val(recognet,idnet,brinet, criterion, val_loader, len_val_set):
+def val(recognet,idnet,brinet, criterion, val_loader):
     recognet.eval()
     idnet.eval()
     brinet.eval()
-    avg_cost = 0
-    avg_CER = 0
-    avg_WER = 0
+
+    tot_CE = 0
+    tot_WE = 0
+    tot_Clen = 0
+    tot_Wlen = 0
 
     for val_data in val_loader:
         # Process predictions
@@ -89,39 +85,34 @@ def val(recognet,idnet,brinet, criterion, val_loader, len_val_set):
 
         preds = recognet(images, win1,win2,win3,True)
 
-        preds_size = Variable(torch.LongTensor([preds.size(0)] * images.size(0)))
-
-        # Process labels for CTCLoss
-        labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
-        label_lengths = torch.LongTensor([len(t) for t in transcr])
-        # Compute CTCLoss
-        preds_size = preds_size.cuda()
-        labels = labels.cuda()
-        label_lengths = label_lengths.cuda()
-        cost = criterion(preds, labels, preds_size, label_lengths)  # / batch_size
-        avg_cost += cost.item()
-
         # Convert paths to string for metrics
         tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
         if tdec.ndim == 1:
             tt = [v for j, v in enumerate(tdec) if j == 0 or v != tdec[j - 1]]
             dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
             # Compute metrics
-            avg_CER += CER(transcr[0], dec_transcr)
-            avg_WER += WER(transcr[0], dec_transcr)
+            cur_CE,cur_Clen = CER(transcr[0], dec_transcr)
+            tot_CE = tot_CE + cur_CE
+            tot_Clen = tot_Clen + cur_Clen
+            cur_WE,cur_Wlen = WER(transcr[0], dec_transcr)
+            tot_WE = tot_WE + cur_WE
+            tot_Wlen = tot_Wlen + cur_Wlen
         else:
             for k in range(len(tdec)):
                 tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
                 dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
                 # Compute metrics
-                avg_CER += CER(transcr[k], dec_transcr)
-                avg_WER += WER(transcr[k], dec_transcr)
+                cur_CE,cur_Clen = CER(transcr[0], dec_transcr)
+                tot_CE = tot_CE + cur_CE
+                tot_Clen = tot_Clen + cur_Clen
+                cur_WE,cur_Wlen = WER(transcr[0], dec_transcr)
+                tot_WE = tot_WE + cur_WE
+                tot_Wlen = tot_Wlen + cur_Wlen
 
-    avg_cost = avg_cost / len(val_loader)
-    avg_CER = avg_CER / len_val_set
-    avg_WER = avg_WER / len_val_set
-    return avg_cost, avg_CER, avg_WER
+    avg_CER = tot_CE / tot_Clen
+    avg_WER = tot_WE / tot_Wlen
 
+    return avg_CER, avg_WER
 
 def main():
     epochs = 400
@@ -164,8 +155,6 @@ def main():
         num_workers=4,
         collate_fn=Preprocessing.pad_packed_collate)
     '''
-    len_val_set = val1_set.__len__()
-    #len_val2_set = val2_set.__len__()
 
     num_class = len(alphabet)
     
@@ -221,13 +210,13 @@ def main():
 
         # Validation
         if epoch % 1 == 0:
-            val_loss, val_CER, val_WER = val(recog_net,id_net,bri,criterion, val_loader, len_val_set)
-            #val_loss2, val_CER2, val_WER2 = val(recog_net,id_net,bri,criterion, val_loader2, len_val2_set)
-            print('val WER CER', val_WER,val_CER, 'epoch' ,epoch, file=out_f)
-            #print('val2 WER CER', val_WER2,val_CER2, 'epoch' ,epoch, file=out_f)
-            #avg_CER = ((val_CER * len_val_set) + (val_CER2 * len_val2_set)) / (len_val_set + len_val2_set)
-            #avg_WER = ((val_WER * len_val_set) + (val_WER2 * len_val2_set)) / (len_val_set + len_val2_set)
-            #print('avg WER CER', avg_WER,avg_CER, 'epoch' ,epoch, file=out_f)
+            val_CER, val_WER = val(recog_net,id_net,bri,criterion, val_loader)
+            #val_CER2, val_WER2 = val(recog_net,id_net,bri,criterion, val_loader2)
+            print('val WER CER', val_WER," ",val_CER, 'epoch' ,epoch, file=out_f)
+            #print('val2 WER CER', val_WER2," ",val_CER2, 'epoch' ,epoch, file=out_f)
+            #avg_CER = (val_CER + val_CER2 ) / 2.0
+            #avg_WER = (val_WER + val_WER2) / 2.0
+            #print('avg WER CER', avg_WER," ",avg_CER, " " ,'epoch' ,epoch, file=out_f)
 
 if __name__ == '__main__':
     main()
