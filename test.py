@@ -19,9 +19,9 @@ else:
     model_name1 = './weights/ADA_weights/'
     model_name2 = './weights/ADA_weights/'
     model_name3 = './weights/ADA_weights/'
-    
+
 alphabet = """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
-cdict = {c: i for i, c in enumerate(alphabet)}  
+cdict = {c: i for i, c in enumerate(alphabet)}
 icdict = {i: c for i, c in enumerate(alphabet)}  
 
 def test(model1, model2, model3, criterion, test_loader, len_test_set):
@@ -32,10 +32,11 @@ def test(model1, model2, model3, criterion, test_loader, len_test_set):
         model1.eval()
         model2.eval()
         model3.eval()
-        
-    avg_cost = 0
-    avg_CER = 0
-    avg_WER = 0
+
+    tot_CE = 0
+    tot_WE = 0
+    tot_Clen = 0
+    tot_Wlen = 0
     for iter_idx, (img, transcr, ids) in enumerate(tqdm(test_loader)):
         
         img = Variable(img.data.unsqueeze(1))
@@ -48,51 +49,37 @@ def test(model1, model2, model3, criterion, test_loader, len_test_set):
                 global_wid = model2(img,True)
                 win1,win2,win3 = model3(global_wid)
                 preds = model1(img, win1,win2,win3,True)
-                
-        preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
-        
-        labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
-        label_lengths = torch.LongTensor([len(t) for t in transcr])
-      
-        preds_size = preds_size.cuda()
-        labels = labels.cuda()
-        label_lengths = label_lengths.cuda()
-        cost = criterion(preds, labels, preds_size, label_lengths)  
-        avg_cost += cost.item()
 
-       
         tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
 
         if tdec.ndim == 1:  
             tt = [v for j, v in enumerate(tdec) if j == 0 or v != tdec[j - 1]]
             dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
-            
-            avg_CER += CER(transcr[0], dec_transcr)
-            avg_WER += WER(transcr[0], dec_transcr)
+            cur_CE,cur_Clen = CER(transcr[0], dec_transcr)
+            tot_CE = tot_CE + cur_CE
+            tot_Clen = tot_Clen + cur_Clen
+            cur_WE,cur_Wlen = WER(transcr[0], dec_transcr)
+            tot_WE = tot_WE + cur_WE
+            tot_Wlen = tot_Wlen + cur_Wlen
+
         else:
             for k in range(len(tdec)):
                 tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
                 dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
-              
-                avg_CER += CER(transcr[k], dec_transcr)
-                avg_WER += WER(transcr[k], dec_transcr)
+                cur_CE,cur_Clen = CER(transcr[k], dec_transcr)
+                tot_CE = tot_CE + cur_CE
+                tot_Clen = tot_Clen + cur_Clen
+                cur_WE,cur_Wlen = WER(transcr[k], dec_transcr)
+                tot_WE = tot_WE + cur_WE
+                tot_Wlen = tot_Wlen + cur_Wlen
 
-                if iter_idx % 50 == 0 and k % 2 == 0:
-                    print('label:', transcr[k])
-                    print('prediction:', dec_transcr)
-                    print('CER:', CER(transcr[k], dec_transcr))
-                    print('WER:', WER(transcr[k], dec_transcr))
-
-
-    avg_cost = avg_cost / len(test_loader)
-    avg_CER = avg_CER / len_test_set
-    avg_WER = avg_WER / len_test_set
-    print('Average CTCloss', avg_cost)
+    avg_CER = tot_CE / tot_Clen
+    avg_WER = tot_WE / tot_Wlen
     print("Average CER", avg_CER)
     print("Average WER", avg_WER)
 
     print("Testing done.")
-    return avg_cost, avg_CER, avg_WER
+    return avg_CER, avg_WER
 
 
 
