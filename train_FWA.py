@@ -9,7 +9,6 @@ from configure import Preprocessing
 from configure import myDataset
 from utils import CER, WER
 
-
 from model import HAMVisContexNN,WIDNN,Bridge
 #from evaluate import evaluate
 
@@ -60,7 +59,6 @@ def train_batch(recognet, idnet, brinet, data, optimizer, criterion, device):
     loss.backward()
     optimizer.step()
     return loss.item()
-
 
 def val(recognet,idnet,brinet, criterion, val_loader):
     recognet.eval()
